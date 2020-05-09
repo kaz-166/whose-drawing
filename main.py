@@ -19,7 +19,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import optimizers
 
 # 識別ラベルの数(今回は3つ)
-NUM_CLASSES = 2
+NUM_CLASSES = 3
 # 学習する時の画像のサイズ(px)
 IMAGE_SIZE = 80
 # 画像の次元数(28px*28px*3(カラー))
@@ -56,6 +56,7 @@ if __name__ == '__main__':
     l = line.split()
     # データを読み込んで28x28に縮小
     img = cv2.imread(os.getcwd() + l[0])
+    print(os.getcwd() + l[0])
     img = cv2.resize(img, dsize = (IMAGE_SIZE, IMAGE_SIZE))
     # 一列にした後、0-1のfloat値にする
     train_image.append(img.flatten().astype(np.float32)/255.0)
@@ -84,7 +85,7 @@ if __name__ == '__main__':
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
-  model.add(Dense(2))
+  model.add(Dense(NUM_CLASSES))
   model.add(Activation("softmax"))
 
 # オプティマイザにAdamを使用
@@ -92,8 +93,8 @@ if __name__ == '__main__':
 # モデルをコンパイル
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
  # 学習を実行。10%はテストに使用。
-  Y = to_categorical(train_label, 2)
-  history = model.fit(train_image, Y, nb_epoch=80, batch_size=100, validation_split=0.1, verbose = 0)
+  Y = to_categorical(train_label, NUM_CLASSES)
+  history = model.fit(train_image, Y, nb_epoch=1000, batch_size=100, validation_split=0.1, verbose = 0)
 
   plt.plot(history.history['acc'], color='red')
   plt.title('Training Accuracy')
@@ -112,6 +113,7 @@ if __name__ == '__main__':
   for line in f:
     line = line.rstrip()
     l = line.split()
+    print(os.getcwd() + l[0])
     img = cv2.imread(os.getcwd() + l[0])
     img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
     test_image_org.append(img)
@@ -136,7 +138,6 @@ print("accuracy: ", sum_accuracy)
 
 
 #ファイル出力
-
 f = open(LABEL_ANNOTATION_PATH, mode='r')
 label_annotation = []
 for line in f:
@@ -147,15 +148,20 @@ for line in f:
 path = './log/result.html'
 f = open(path, mode='w')
 f.write("<h1>Results</><br>")
-f.write("<h2>Loss Function</h2><br>")
+f.write("<h2>Training Results</h2><br>")
 f.write("学習データ画像枚数: " + str(train_image.shape[0]) + "枚<br>")
 f.write("最適化法: " + TRAINING_OPTIMIZER + "<br>")
 f.write("活性化関数: " + ACTIVATION_FUNC + "<br>")
 f.write("<img src=" + os.getcwd() + LOG_TRAINING_GRAPH_PATH + " alt=\"\"  height=\"400\"  /> <br>")
 f.write("<h2>Prediction Results</h2><br>")
+f.write("Prediction accuracy: " + str(int(sum_accuracy*100)) + "[%]<br>")
 for i in range(test_path.shape[0]):
-    f.write("<img src=" + test_path[i] + " alt=\"\"  height=\"200\" />") 
-    f.write(label_annotation[test_label[i]][1])
+    f.write("<img src=" + test_path[i] + " alt=\"\"  height=\"50\" />") 
+    if test_label[i] == result[i]:
+        f.write("<font color=\"green\"><b>Correct</b>      </font>")
+    else:
+        f.write("<font color=\"red\"><b>Incorrect</b>      </font>")
+    f.write("Illustrated by " + label_annotation[test_label[i]][1])
     f.write("<br>")
 
 f.close()
