@@ -16,13 +16,20 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input, Activation, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras import optimizers
 
 # 識別ラベルの数(今回は3つ)
 NUM_CLASSES = 2
 # 学習する時の画像のサイズ(px)
-IMAGE_SIZE = 28
+IMAGE_SIZE = 80
 # 画像の次元数(28px*28px*3(カラー))
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
+
+LOG_TRAINING_GRAPH_PATH = './log/training_error.png'
+LABEL_ANNOTATION_PATH = './label_annotation.txt'
+
+TRAINING_OPTIMIZER = "SGD(確率的勾配降下法)"
+ACTIVATION_FUNC = "relu"
 
 
 # Flagはデフォルト値やヘルプ画面の説明文を定数っぽく登録できるTensorFlow組み込み関数
@@ -34,13 +41,6 @@ flags.DEFINE_string('train', './train_data.txt', 'File name of train data')
 flags.DEFINE_string('test', './test_data.txt', 'File name of train data')
 # TensorBoardのデータ保存先フォルダ
 flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.')
-# 学習訓練の試行回数
-flags.DEFINE_integer('max_steps', 100, 'Number of steps to run trainer.')
-# 1回の学習で何枚の画像を使うか
-flags.DEFINE_integer('batch_size', 10, 'Batch size Must divide evenly into the dataset sizes.')
-# 学習率、小さすぎると学習が進まないし、大きすぎても誤差が収束しなかったり発散したりしてダメとか。繊細
-flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
-
 
 
 if __name__ == '__main__':
@@ -69,11 +69,19 @@ if __name__ == '__main__':
   #Kerasの学習
   model = Sequential()
   model.add(Dense(200, input_dim=IMAGE_PIXELS))
-  model.add(Activation("relu"))
+  model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
   model.add(Dense(200))
-  model.add(Activation("relu"))
+  model.add(Activation(ACTIVATION_FUNC))
+  model.add(Dropout(0.2))
+
+  model.add(Dense(200))
+  model.add(Activation(ACTIVATION_FUNC))
+  model.add(Dropout(0.2))
+  
+  model.add(Dense(200))
+  model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
   model.add(Dense(2))
@@ -85,13 +93,14 @@ if __name__ == '__main__':
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
  # 学習を実行。10%はテストに使用。
   Y = to_categorical(train_label, 2)
-  history = model.fit(train_image, Y, nb_epoch=1500, batch_size=100, validation_split=0.1, verbose = 0)
+  history = model.fit(train_image, Y, nb_epoch=80, batch_size=100, validation_split=0.1, verbose = 0)
 
   plt.plot(history.history['acc'], color='red')
   plt.title('Training Accuracy')
   plt.xlabel('epoch')
   plt.ylabel('accuracy')
-  plt.savefig('log/training_error.png')
+
+  plt.savefig(LOG_TRAINING_GRAPH_PATH)
 
 
     # 同じく検証用画像をTensorFlowで読み込めるようTensor形式(行列)に変換
@@ -99,11 +108,13 @@ if __name__ == '__main__':
   test_image = []
   test_label = []
   test_path = []
+  test_image_org = []
   for line in f:
     line = line.rstrip()
     l = line.split()
     img = cv2.imread(os.getcwd() + l[0])
     img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
+    test_image_org.append(img)
     test_image.append(img.flatten().astype(np.float32)/255.0)
     test_label.append(int(l[1]))
     test_path.append(os.getcwd() + l[0])
@@ -114,11 +125,37 @@ if __name__ == '__main__':
   f.close()
 
 result = model.predict_classes(test_image)
-
+result_prob = model.predict_proba(test_image)
 sum_accuracy = 0.0
 for i in range(test_image.shape[0]):
-    print("label:", test_label[i], "result:", result[i])
+    print("label:", test_label[i], "result:", result[i], "prob: ", result_prob[i])
     if test_label[i] == result[i]:
         sum_accuracy += 1
 sum_accuracy /= test_image.shape[0]
 print("accuracy: ", sum_accuracy)
+
+
+#ファイル出力
+
+f = open(LABEL_ANNOTATION_PATH, mode='r')
+label_annotation = []
+for line in f:
+    # 改行を除いてスペース区切りにする
+    line = line.rstrip()
+    label_annotation.append(line.split())
+
+path = './log/result.html'
+f = open(path, mode='w')
+f.write("<h1>Results</><br>")
+f.write("<h2>Loss Function</h2><br>")
+f.write("学習データ画像枚数: " + str(train_image.shape[0]) + "枚<br>")
+f.write("最適化法: " + TRAINING_OPTIMIZER + "<br>")
+f.write("活性化関数: " + ACTIVATION_FUNC + "<br>")
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_GRAPH_PATH + " alt=\"\"  height=\"400\"  /> <br>")
+f.write("<h2>Prediction Results</h2><br>")
+for i in range(test_path.shape[0]):
+    f.write("<img src=" + test_path[i] + " alt=\"\"  height=\"200\" />") 
+    f.write(label_annotation[test_label[i]][1])
+    f.write("<br>")
+
+f.close()

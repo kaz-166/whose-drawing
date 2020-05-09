@@ -1,9 +1,7 @@
 ./image/mamutaloh/0022.png 0
 ./image/mamutaloh/0023.png 0
 ./image/mamutaloh/0024.png 0
-./image/kannnu/0012.jpg 1
-./image/kannnu/0013.jpg 1
-./image/kannnu/0014.jpg 1
-./image/kannnu/0015.png 1
+./image/kannnu/0009.jpg 1
+./image/kannnu/0010.jpg 1
 ./image/kannnu/0016.jpg 1
 ./image/kannnu/0017.png 1
