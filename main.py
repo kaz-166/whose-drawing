@@ -8,9 +8,12 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.python.platform
 import train
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 # 識別ラベルの数(今回は3つ)
-NUM_CLASSES = 3
+NUM_CLASSES = 2
 # 学習する時の画像のサイズ(px)
 IMAGE_SIZE = 28
 # 画像の次元数(28px*28px*3(カラー))
@@ -106,6 +109,9 @@ if __name__ == '__main__':
     # train_dirでTensorBoardログを出力するpathを指定
     summary_writer = tf.summary.FileWriter(FLAGS.train_dir, sess.graph_def)
 
+    x = np.array([0]*FLAGS.max_steps)
+    y = np.array([0.0]*FLAGS.max_steps)
+
     # 実際にmax_stepの回数だけ訓練の実行していく
     for step in range(FLAGS.max_steps):
       for i in range(int(len(train_image)/FLAGS.batch_size)):
@@ -123,6 +129,8 @@ if __name__ == '__main__':
         labels_placeholder: train_label,
         keep_prob: 1.0})
       print ("step %d, training accuracy %g"%(step, train_accuracy))
+      x[step] = step
+      y[step] = 1.0 - train_accuracy
 
       # 1step終わるたびにTensorBoardに表示する値を追加する
       summary_str = sess.run(summary_op, feed_dict={
@@ -140,3 +148,9 @@ if __name__ == '__main__':
   # データを学習して最終的に出来上がったモデルを保存
   # "model.ckpt"は出力されるファイル名
   save_path = saver.save(sess, "model.ckpt")
+
+  plt.plot(x, y)
+  plt.title('Training Error')
+  plt.xlabel('steps')
+  plt.ylabel('error')
+  plt.savefig('log/training_error.png')

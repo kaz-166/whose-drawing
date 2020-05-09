@@ -9,13 +9,11 @@ import tensorflow as tf
 import tensorflow.python.platform
 
 # 識別ラベルの数(今回は3つ)
-NUM_CLASSES = 3
+NUM_CLASSES = 2
 # 学習する時の画像のサイズ(px)
 IMAGE_SIZE = 28
 # 画像の次元数(28px*28px*3(カラー))
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
-
-
 
 # 予測結果と正解にどれくらい「誤差」があったかを算出する
 # logitsは計算結果:  float - [batch_size, NUM_CLASSES]

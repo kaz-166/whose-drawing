@@ -13,6 +13,13 @@
 ./image/mamutaloh/0012.png 0
 ./image/mamutaloh/0013.png 0
 ./image/mamutaloh/0014.png 0
+./image/mamutaloh/0015.jpg 0
+./image/mamutaloh/0016.png 0
+./image/mamutaloh/0017.png 0
+./image/mamutaloh/0018.png 0
+./image/mamutaloh/0019.png 0
+./image/mamutaloh/0020.png 0
+./image/mamutaloh/0021.png 0
 ./image/kannnu/0001.png 1
 ./image/kannnu/0002.png 1
 ./image/kannnu/0003.jpg 1
@@ -21,3 +28,6 @@
 ./image/kannnu/0006.jpg 1
 ./image/kannnu/0007.jpg 1
 ./image/kannnu/0008.jpg 1
+./image/kannnu/0009.jpg 1
+./image/kannnu/0010.jpg 1
+./image/kannnu/0011.jpg 1
