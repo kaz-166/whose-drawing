@@ -7,6 +7,7 @@ import random
 import numpy as np
 import tensorflow as tf
 import tensorflow.python.platform
+from tensorflow import keras
 
 # 識別ラベルの数(今回は3つ)
 NUM_CLASSES = 2
