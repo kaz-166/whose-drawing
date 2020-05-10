@@ -13,15 +13,15 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, Activation, Dropout
+from tensorflow.keras.layers import Dense, Input, Activation, Dropout, Flatten, Conv2D, MaxPooling2D
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import optimizers
 
 # 識別ラベルの数(今回は3つ)
-NUM_CLASSES = 3
+NUM_CLASSES = 4
 # 学習する時の画像のサイズ(px)
-IMAGE_SIZE = 80
+IMAGE_SIZE = 64
 # 画像の次元数(28px*28px*3(カラー))
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
@@ -56,10 +56,10 @@ if __name__ == '__main__':
     l = line.split()
     # データを読み込んで28x28に縮小
     img = cv2.imread(os.getcwd() + l[0])
-    print(os.getcwd() + l[0])
     img = cv2.resize(img, dsize = (IMAGE_SIZE, IMAGE_SIZE))
     # 一列にした後、0-1のfloat値にする
-    train_image.append(img.flatten().astype(np.float32)/255.0)
+    #train_image.append(img.flatten().astype(np.float32)/255.0)
+    train_image.append(img.astype(np.float32)/255.0)
     train_label.append(int(l[1]))
   # numpy形式に変換
   train_image = np.asarray(train_image)
@@ -69,19 +69,19 @@ if __name__ == '__main__':
 
   #Kerasの学習
   model = Sequential()
-  model.add(Dense(200, input_dim=IMAGE_PIXELS))
+  #model.add(Dense(200, input_dim=IMAGE_PIXELS))
+  #model.add(Dense(200, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+  model.add(Conv2D(32, (3, 3), activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+  model.add(MaxPooling2D(pool_size=(2, 2)))
+  model.add(Flatten())
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
-  model.add(Dense(200))
-  model.add(Activation(ACTIVATION_FUNC))
-  model.add(Dropout(0.2))
-
-  model.add(Dense(200))
+  model.add(Dense(64))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
   
-  model.add(Dense(200))
+  model.add(Dense(64))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
  # 学習を実行。10%はテストに使用。
   Y = to_categorical(train_label, NUM_CLASSES)
-  history = model.fit(train_image, Y, nb_epoch=1000, batch_size=100, validation_split=0.1, verbose = 0)
+  history = model.fit(train_image, Y, nb_epoch=300, batch_size=100, validation_split=0.1)
 
   plt.plot(history.history['acc'], color='red')
   plt.title('Training Accuracy')
@@ -113,11 +113,11 @@ if __name__ == '__main__':
   for line in f:
     line = line.rstrip()
     l = line.split()
-    print(os.getcwd() + l[0])
     img = cv2.imread(os.getcwd() + l[0])
     img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
     test_image_org.append(img)
-    test_image.append(img.flatten().astype(np.float32)/255.0)
+    #test_image.append(img.flatten().astype(np.float32)/255.0)
+    test_image.append(img.astype(np.float32)/255.0)
     test_label.append(int(l[1]))
     test_path.append(os.getcwd() + l[0])
   test_image = np.asarray(test_image)

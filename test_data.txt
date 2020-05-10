@@ -12,3 +12,7 @@
 ./image/blush/0025.jpg 2
 ./image/blush/0026.jpg 2
 ./image/blush/0027.jpg 2
+./image/lewin/0021.jpg 3
+./image/lewin/0022.jpg 3
+./image/lewin/0023.jpg 3
+./image/lewin/0024.jpg 3
