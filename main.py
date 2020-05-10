@@ -19,6 +19,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import optimizers
 from tensorflow.python.keras.utils.vis_utils import plot_model 
 
+
 # 識別ラベルの数(今回は3つ)
 NUM_CLASSES = 4
 # 学習する時の画像のサイズ(px)
@@ -26,7 +27,8 @@ IMAGE_SIZE = 128
 # 画像の次元数(28px*28px*3(カラー))
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
-LOG_TRAINING_GRAPH_PATH = './log/training_error.png'
+LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/training_accuracy.png'
+LOG_TRAINING_LOSS_GRAPH_PATH = './log/training_loss.png'
 LOG_TRAINING_MODEL_PATH = './log/model.png'
 LABEL_ANNOTATION_PATH = './label_annotation.txt'
 
@@ -93,15 +95,21 @@ if __name__ == '__main__':
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
  # 学習を実行。10%はテストに使用。
   Y = to_categorical(train_label, NUM_CLASSES)
-  history = model.fit(train_image, Y, nb_epoch=300, batch_size=100, validation_split=0.1)
+  history = model.fit(train_image, Y, nb_epoch=400, batch_size=100, validation_split=0.1)
 
+#Accuracyのグラフプロット
   plt.plot(history.history['acc'], color='red')
   plt.title('Training Accuracy')
   plt.xlabel('epoch')
   plt.ylabel('accuracy')
-
-  plt.savefig(LOG_TRAINING_GRAPH_PATH)
-
+  plt.savefig(LOG_TRAINING_ACCURACY_GRAPH_PATH)
+  plt.figure()
+#Lossのグラフプロット
+  plt.plot(history.history['loss'], color='green')
+  plt.title('Loss')
+  plt.xlabel('epoch')
+  plt.ylabel('loss')
+  plt.savefig(LOG_TRAINING_LOSS_GRAPH_PATH)
 
     # 同じく検証用画像をTensorFlowで読み込めるようTensor形式(行列)に変換
   f = open(FLAGS.test, 'r')
@@ -147,29 +155,43 @@ for line in f:
 path = './log/result.html'
 f = open(path, mode='w')
 f.write("<h1>Results</><br>")
-f.write("<h2>Training Results</h2><br>")
+f.write("<hr><h2>Training Results</h2><hr>")
 f.write("学習データ画像枚数: " + str(train_image.shape[0]) + "枚<br>")
 f.write("最適化法: " + TRAINING_OPTIMIZER + "<br>")
 f.write("活性化関数: " + ACTIVATION_FUNC + "<br>")
 
-f.write("<img src=" + os.getcwd() + LOG_TRAINING_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
-f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"300\"  height=\"800\"  /> <br>")
-f.write("<h2>Prediction Results</h2><br>")
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_ACCURACY_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_LOSS_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
+f.write("<hr><h2>Neural Network Structure</h2><hr>")
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"400\"  height=\"800\"  /> <br>")
+f.write("<hr><h2>Prediction Results</h2><hr>")
 f.write("<b>Prediction accuracy: " + str(int(sum_accuracy*100)) + "[%]</b><br>")
 
 f.write("<table border=\"1\">")
 f.write("<tr>\n")
-f.write("<td>Image</td>\n")
-f.write("<td>Result</td>\n")
-f.write("<td>Illustrator</td>\n")
+f.write("<td><b>Image</b></td>\n")
+f.write("<td><b>Illustrator(Predicted)</b></td>\n")
+f.write("<td><b>Illustrator(Answer)</b></td>\n")
+f.write("<td><b>Probability</b></td>\n")
+f.write("<td><b>Result</b></td>\n")
+
 f.write("</tr>")
 for i in range(test_path.shape[0]):
     f.write("<td><img src=" + test_path[i] + " alt=\"\"  height=\"50\" /></td>") 
+    #最も確率の高い値を抽出する
+    max_prob = 0.0
+    max_arg = 0
+    for p in range(result_prob[i].shape[0]):
+      if max_prob < result_prob[i][p]:
+        max_prob = result_prob[i][p]
+        max_arg = p
+    f.write("<td><centor>" + label_annotation[result[i]][1] + "</centor></td>")
+    f.write("<td><centor>" + label_annotation[test_label[i]][1] + "</centor></td>")
+    f.write("<td>" + str(int(max_prob*100)) + "％</td>")
     if test_label[i] == result[i]:
         f.write("<td><font color=\"green\"><b>Correct</b></font></td>")
     else:
         f.write("<td><font color=\"red\"><b>Incorrect</b></font></td>")
-    f.write("<td>" + label_annotation[test_label[i]][1] + "</td>")
     f.write("</tr>")
 f.write("</table>")
 f.close()
