@@ -17,15 +17,17 @@ from tensorflow.keras.layers import Dense, Input, Activation, Dropout, Flatten, 
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras import optimizers
+from tensorflow.python.keras.utils.vis_utils import plot_model 
 
 # 識別ラベルの数(今回は3つ)
 NUM_CLASSES = 4
 # 学習する時の画像のサイズ(px)
-IMAGE_SIZE = 64
+IMAGE_SIZE = 128
 # 画像の次元数(28px*28px*3(カラー))
 IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
 LOG_TRAINING_GRAPH_PATH = './log/training_error.png'
+LOG_TRAINING_MODEL_PATH = './log/model.png'
 LABEL_ANNOTATION_PATH = './label_annotation.txt'
 
 TRAINING_OPTIMIZER = "SGD(確率的勾配降下法)"
@@ -69,19 +71,16 @@ if __name__ == '__main__':
 
   #Kerasの学習
   model = Sequential()
-  #model.add(Dense(200, input_dim=IMAGE_PIXELS))
-  #model.add(Dense(200, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
-  model.add(Conv2D(32, (3, 3), activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+
+  model.add(Conv2D(3, kernel_size=3, activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+  model.add(MaxPooling2D(pool_size=(2, 2)))
+  model.add(Conv2D(3, kernel_size=3, activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
   model.add(MaxPooling2D(pool_size=(2, 2)))
   model.add(Flatten())
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
-  model.add(Dense(64))
-  model.add(Activation(ACTIVATION_FUNC))
-  model.add(Dropout(0.2))
-  
-  model.add(Dense(64))
+  model.add(Dense(200))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
 
@@ -116,7 +115,6 @@ if __name__ == '__main__':
     img = cv2.imread(os.getcwd() + l[0])
     img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
     test_image_org.append(img)
-    #test_image.append(img.flatten().astype(np.float32)/255.0)
     test_image.append(img.astype(np.float32)/255.0)
     test_label.append(int(l[1]))
     test_path.append(os.getcwd() + l[0])
@@ -136,6 +134,7 @@ for i in range(test_image.shape[0]):
 sum_accuracy /= test_image.shape[0]
 print("accuracy: ", sum_accuracy)
 
+plot_model(model, show_shapes=True, to_file=LOG_TRAINING_MODEL_PATH)
 
 #ファイル出力
 f = open(LABEL_ANNOTATION_PATH, mode='r')
@@ -152,16 +151,26 @@ f.write("<h2>Training Results</h2><br>")
 f.write("学習データ画像枚数: " + str(train_image.shape[0]) + "枚<br>")
 f.write("最適化法: " + TRAINING_OPTIMIZER + "<br>")
 f.write("活性化関数: " + ACTIVATION_FUNC + "<br>")
-f.write("<img src=" + os.getcwd() + LOG_TRAINING_GRAPH_PATH + " alt=\"\"  height=\"400\"  /> <br>")
-f.write("<h2>Prediction Results</h2><br>")
-f.write("Prediction accuracy: " + str(int(sum_accuracy*100)) + "[%]<br>")
-for i in range(test_path.shape[0]):
-    f.write("<img src=" + test_path[i] + " alt=\"\"  height=\"50\" />") 
-    if test_label[i] == result[i]:
-        f.write("<font color=\"green\"><b>Correct</b>      </font>")
-    else:
-        f.write("<font color=\"red\"><b>Incorrect</b>      </font>")
-    f.write("Illustrated by " + label_annotation[test_label[i]][1])
-    f.write("<br>")
 
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
+f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"300\"  height=\"800\"  /> <br>")
+f.write("<h2>Prediction Results</h2><br>")
+f.write("<b>Prediction accuracy: " + str(int(sum_accuracy*100)) + "[%]</b><br>")
+
+f.write("<table border=\"1\">")
+f.write("<tr>\n")
+f.write("<td>Image</td>\n")
+f.write("<td>Result</td>\n")
+f.write("<td>Illustrator</td>\n")
+f.write("</tr>")
+for i in range(test_path.shape[0]):
+    f.write("<td><img src=" + test_path[i] + " alt=\"\"  height=\"50\" /></td>") 
+    if test_label[i] == result[i]:
+        f.write("<td><font color=\"green\"><b>Correct</b></font></td>")
+    else:
+        f.write("<td><font color=\"red\"><b>Incorrect</b></font></td>")
+    f.write("<td>" + label_annotation[test_label[i]][1] + "</td>")
+    f.write("</tr>")
+f.write("</table>")
 f.close()
+
