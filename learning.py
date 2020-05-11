@@ -19,6 +19,7 @@ from tensorflow.python.keras.utils.vis_utils import plot_model
 import imgproc
 import export
 from sklearn import svm as sksvm
+from sklearn.decomposition import PCA
 
 #Convolutional Neural Networkによる学習
 def cnn(train_dir, test_dir):
@@ -30,9 +31,9 @@ def cnn(train_dir, test_dir):
   IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
 
   LABEL_ANNOTATION_PATH = './label_annotation.txt'
-  LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/training_accuracy.png'
-  LOG_TRAINING_LOSS_GRAPH_PATH = './log/training_loss.png'
-  LOG_TRAINING_MODEL_PATH = './log/model.png'
+  LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/cnn/training_accuracy.png'
+  LOG_TRAINING_LOSS_GRAPH_PATH = './log/cnn/training_loss.png'
+  LOG_TRAINING_MODEL_PATH = './log/cnn/model.png'
   TRAINING_OPTIMIZER = "SGD(確率的勾配降下法)"
   ACTIVATION_FUNC = "relu"
  # 学習用画像をTensorFlowで読み込めるようTensor形式(行列)に変換
@@ -91,7 +92,7 @@ def cnn(train_dir, test_dir):
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
   # 学習を実行。10%はテストに使用。
   Y = to_categorical(train_label, NUM_CLASSES)
-  history = model.fit(train_image, Y, nb_epoch=40, batch_size=100, validation_split=0.1)
+  history = model.fit(train_image, Y, nb_epoch=400, batch_size=100, validation_split=0.1)
 
   export.plot(history)
 
@@ -131,7 +132,7 @@ def cnn(train_dir, test_dir):
   result_dict['n_img'] = train_image.shape[0]
   result_dict['opt'] = TRAINING_OPTIMIZER
   result_dict['act_func'] = ACTIVATION_FUNC
-  export.html(result_dict, test_image, test_label, test_path, result, result_prob)
+  export.cnn_html(result_dict, test_image, test_label, test_path, result, result_prob)
 
 #SVMによる学習
 def svm(train_dir, test_dir):
@@ -151,40 +152,78 @@ def svm(train_dir, test_dir):
     # 改行を除いてスペース区切りにする
     line = line.rstrip()
     l = line.split()
+    feat = []
     # データを読み込んで28x28に縮小
     img = cv2.imread(os.getcwd() + l[0])
     #img = cv2.resize(img, dsize = (IMAGE_SIZE, IMAGE_SIZE))
-    h = imgproc.get_avg_hue(img)
-    s = imgproc.get_avg_saturation(img)
-    v = imgproc.get_avg_value(img)
-    train_features.append([h, s, v])
+    feat.append(imgproc.get_hsv_stats(img))
+    feat.append(imgproc.get_rgb_stats(img))
+    feat = sum(feat, [])  #1次元の配列に変換する
+    train_features.append(feat)
     train_image.append(img.astype(np.float32)/255.0)
     train_label.append(int(l[1]))
   f.close()
 
+
   #SVMによる学習
   # クラスオブジェクトを生成(Classification)
-  model = sksvm.SVC(gamma="auto")
+  model = sksvm.SVC(C=10, gamma=0.01)
   # 学習する
   model.fit(train_features, train_label)
+
+  # 解析用に特徴量の詳細データを取得
+  #for 
+  #PCAで次元圧縮
+  pca = PCA(n_components=2)
+  pca.fit(train_features)
+  pca_X = pca.transform(train_features)
+
+  fig0, (ax0, ax1) = plt.subplots(1,2,figsize=(12,6))
+  ax0.set_title("PCA with Correct ClassLabel")
+  ax0.scatter(pca_X[:,0], pca_X[:,1], c=train_label)
+
+  Z = model.predict(train_features)
+  ax1.set_title("PCA with SVN Result ClassLabel")
+  ax1.scatter(pca_X[:,0], pca_X[:,1], c=Z)
+
+  plt.savefig('./log/svm/pca.png')
+  plt.figure()
 
   #テストデータの取得
   f = open(test_dir, 'r')
   test_label = []
   test_features = []
+  test_path = []
   for line in f:
     line = line.rstrip()
     l = line.split()
+    feat = []
     img = cv2.imread(os.getcwd() + l[0])
     #img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-    h = imgproc.get_avg_hue(img)
-    s = imgproc.get_avg_saturation(img)
-    v = imgproc.get_avg_value(img)
-    test_features.append([h, s, v])
+    feat.append(imgproc.get_hsv_stats(img))
+    feat.append(imgproc.get_rgb_stats(img))
+    feat = sum(feat, [])  #1次元の配列に変換する
+    test_features.append(feat)
     test_label.append(int(l[1]))
+    test_path.append(os.getcwd() + l[0])
   f.close()
 
   # 予測する
   predict_y = model.predict(test_features)
   print(predict_y)
+
+  sum_accuracy = 0.0
+  for i in range(np.asarray(test_label).shape[0]):
+    print("label:", test_label[i], "result:", predict_y[i])
+    if test_label[i] == predict_y[i]:
+        sum_accuracy += 1
+  sum_accuracy /= np.asarray(test_label).shape[0]
+  print("accuracy: ", sum_accuracy)
+
+  #結果をhtmlファイル出力
+  result_dict = {'acc':0, 'n_img':0, 'n_feat':0 }
+  result_dict['acc'] = sum_accuracy
+  result_dict['n_img'] = np.asarray(train_image).shape[0]
+  result_dict['n_feat'] = np.asarray(test_features).shape[1]
+  export.svm_html(result_dict, test_label, np.asarray(test_path), predict_y)
 

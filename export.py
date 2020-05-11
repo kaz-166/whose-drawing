@@ -7,9 +7,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/training_accuracy.png'
-LOG_TRAINING_LOSS_GRAPH_PATH = './log/training_loss.png'
-LOG_TRAINING_MODEL_PATH = './log/model.png'
+LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/cnn/training_accuracy.png'
+LOG_TRAINING_LOSS_GRAPH_PATH = './log/cnn/training_loss.png'
+LOG_TRAINING_MODEL_PATH = './log/cnn/model.png'
 LABEL_ANNOTATION_PATH = './label_annotation.txt'
 
 #学習結果グラフの出力
@@ -28,8 +28,8 @@ def plot(history):
     plt.ylabel('loss')
     plt.savefig(LOG_TRAINING_LOSS_GRAPH_PATH)
 
-#結果をhtmlファイル出力
-def html(result_dict, test_image, test_label, test_path, result, result_prob):
+#CNN学習の結果をhtmlファイル出力
+def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob):
     #ファイル出力
     f = open(LABEL_ANNOTATION_PATH, mode='r')
     label_annotation = []
@@ -38,9 +38,9 @@ def html(result_dict, test_image, test_label, test_path, result, result_prob):
         line = line.rstrip()
         label_annotation.append(line.split())
 
-    path = './log/result.html'
+    path = './log/cnn/result.html'
     f = open(path, mode='w')
-    f.write("<h1>Results</><br>")
+    f.write("<h1>Results(Convolutional Neural Network)</><br>")
     f.write("<hr><h2>Training Results</h2><hr>")
     f.write("学習データ画像枚数: " + str(result_dict['n_img']) + "枚<br>")
     f.write("最適化法: " + result_dict['opt'] + "<br>")
@@ -82,3 +82,42 @@ def html(result_dict, test_image, test_label, test_path, result, result_prob):
     f.write("</table>")
     f.close()
 
+#SVM学習の結果をhtmlファイル出力
+def svm_html(result_dict, test_label, test_path, result):
+   #ファイル出力
+    f = open(LABEL_ANNOTATION_PATH, mode='r')
+    label_annotation = []
+    for line in f:
+        # 改行を除いてスペース区切りにする
+        line = line.rstrip()
+        label_annotation.append(line.split())
+
+    path = './log/svm/result.html'
+    f = open(path, mode='w')
+    f.write("<h1>Results(Support Vector Machine)</><br>")
+    f.write("<hr><h2>Training Results</h2><hr>")
+    f.write("学習データ画像枚数: " + str(result_dict['n_img']) + "枚<br>")
+    f.write("特徴数: " + str(result_dict['n_feat']))
+    f.write("<td><img src=" + os.getcwd() + "./log/svm/pca.png" + " alt=\"\"  height=\"500\" /></td>")
+    f.write("<hr><h2>Prediction Results</h2><hr>")
+    f.write("<b>Prediction accuracy: " + str(int(result_dict['acc']*100)) + "[%]</b><br>")
+
+    f.write("<table border=\"1\">")
+    f.write("<tr>\n")
+    f.write("<td><b>Image</b></td>\n")
+    f.write("<td><b>Illustrator(Predicted)</b></td>\n")
+    f.write("<td><b>Illustrator(Answer)</b></td>\n")
+    f.write("<td><b>Result</b></td>\n")
+
+    f.write("</tr>")
+    for i in range(test_path.shape[0]):
+        f.write("<td><img src=" + test_path[i] + " alt=\"\"  height=\"50\" /></td>") 
+        f.write("<td><centor>" + label_annotation[result[i]][1] + "</centor></td>")
+        f.write("<td><centor>" + label_annotation[test_label[i]][1] + "</centor></td>")
+        if test_label[i] == result[i]:
+            f.write("<td><font color=\"green\"><b>Correct</b></font></td>")
+        else:
+            f.write("<td><font color=\"red\"><b>Incorrect</b></font></td>")
+        f.write("</tr>")
+    f.write("</table>")
+    f.close()

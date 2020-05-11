@@ -4,20 +4,14 @@ import sys
 import os
 import cv2
 
-#画像の彩度平均を算出する
-def get_avg_saturation(img):
+#HSVそれぞれの平均と分散を取得する
+def get_hsv_stats(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv票色系に変換
     h,s,v = cv2.split(hsv) # 各成分に分割
-    return s.mean()
+    return [h.mean(), s.mean(), v.mean(), h.std(), s.std(), v.std()]
 
-#画像の輝度平均を算出する
-def get_avg_value(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv票色系に変換
-    h,s,v = cv2.split(hsv) # 各成分に分割
-    return v.mean()
-
-#画像の色相平均を算出する
-def get_avg_hue(img):
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # hsv票色系に変換
-    h,s,v = cv2.split(hsv) # 各成分に分割
-    return h.mean()
+#RGBそれぞれの平均と分散を取得する
+def get_rgb_stats(img):
+    bgr = cv2.cvtColor(img, cv2.IMREAD_COLOR) # rgb票色系
+    g, b, r = cv2.split(bgr)
+    return [r.mean(), g.mean(), b.mean(), r.std(), g.std(), b.std()]
