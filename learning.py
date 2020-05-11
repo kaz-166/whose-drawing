@@ -20,6 +20,7 @@ import imgproc
 import export
 from sklearn import svm as sksvm
 from sklearn.decomposition import PCA
+from tensorflow.keras.models import Model
 
 #Convolutional Neural Networkによる学習
 def cnn(train_dir, test_dir):
@@ -125,6 +126,29 @@ def cnn(train_dir, test_dir):
   print("accuracy: ", sum_accuracy)
 
   plot_model(model, show_shapes=True, to_file=LOG_TRAINING_MODEL_PATH)
+
+  #中間層の出力
+  layer_name = 'conv2d'
+  #中間層のmodelを作成
+  intermediate_layer_model = Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
+  #出力をmodel.predictで見る
+  intermediate_output = intermediate_layer_model.predict(test_image)
+  path = os.getcwd() + "/log/cnn/" + layer_name
+  if os.path.exists(path) == False:
+    os.mkdir(path)
+  for i in range(intermediate_output.shape[0]):
+    cv2.imwrite(path + '/immidiate_' + str(i) +'.png', intermediate_output[i]*255)
+
+  layer_name = 'conv2d_1'
+  #中間層のmodelを作成
+  intermediate_layer_model = Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
+  path = os.getcwd() + "/log/cnn/" + layer_name
+  if os.path.exists(path) == False:
+      os.mkdir(path)
+  #出力をmodel.predictで見る
+  intermediate_output = intermediate_layer_model.predict(test_image)
+  for i in range(intermediate_output.shape[0]):
+    cv2.imwrite(path + '/immidiate_' + str(i) +'.png', intermediate_output[i]*255)
 
   #結果をhtmlファイル出力
   result_dict = {'acc':0, 'n_img':0, 'opt':"", 'act_func':""}

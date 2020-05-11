@@ -40,7 +40,7 @@ def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob
 
     path = './log/cnn/result.html'
     f = open(path, mode='w')
-    f.write("<h1>Results(Convolutional Neural Network)</><br>")
+    f.write("<h1>Results(Convolutional Neural Network)     <img src=" + os.getcwd() + "/icon/k_t.jpg" + " alt=\"\"  height=\"60\"  /></h1>")
     f.write("<hr><h2>Training Results</h2><hr>")
     f.write("学習データ画像枚数: " + str(result_dict['n_img']) + "枚<br>")
     f.write("最適化法: " + result_dict['opt'] + "<br>")
@@ -48,6 +48,14 @@ def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob
 
     f.write("<img src=" + os.getcwd() + LOG_TRAINING_ACCURACY_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
     f.write("<img src=" + os.getcwd() + LOG_TRAINING_LOSS_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
+    f.write("<hr><h2>Immidiate Images</h2><hr>")
+    f.write("<hr><h3>1st Layer: Convolution</h3>")
+    for i in range(test_path.shape[0]):
+        f.write("<td><img src=" + os.getcwd() + "/log/cnn/conv2d/immidiate_" + str(i) + ".png" + " alt=\"\ height=\"64\"  /></td>")
+    f.write("<hr><h3>2nd Layer: Convolution</h3>")
+    for i in range(test_path.shape[0]):
+        f.write("<td><img src=" + os.getcwd() + "/log/cnn/conv2d_1/immidiate_" + str(i) + ".png" + " alt=\"\ height=\"64\"  /></td>")
+    
     f.write("<hr><h2>Neural Network Structure</h2><hr>")
     f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"400\"  height=\"800\"  /> <br>")
     f.write("<hr><h2>Prediction Results</h2><hr>")
@@ -94,7 +102,7 @@ def svm_html(result_dict, test_label, test_path, result):
 
     path = './log/svm/result.html'
     f = open(path, mode='w')
-    f.write("<h1>Results(Support Vector Machine)</><br>")
+    f.write("<h1>Results(Support Vector Machine)     <img src=" + os.getcwd() + "/icon/sklearn.png" + " alt=\"\"  height=\"60\"  /></h1>")
     f.write("<hr><h2>Training Results</h2><hr>")
     f.write("学習データ画像枚数: " + str(result_dict['n_img']) + "枚<br>")
     f.write("特徴数: " + str(result_dict['n_feat']))
@@ -121,3 +129,12 @@ def svm_html(result_dict, test_label, test_path, result):
         f.write("</tr>")
     f.write("</table>")
     f.close()
+
+def statistics():
+    path = os.getcwd() + "/log/stats"
+    if os.path.exists(path) == False:
+        os.mkdir(path)
+
+    file_path = './log/stats/statisctics.html'
+    f = open(path, mode='w')
+    

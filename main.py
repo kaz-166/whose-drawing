@@ -20,8 +20,14 @@ flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.'
 
 
 if __name__ == '__main__':
-  #Convolution Neural Networkによる学習
-  learning.svm(FLAGS.train, FLAGS.test)
+  if sys.argv[1] == "cnn":
+    #Convolution Neural Networkによる学習
+    learning.cnn(FLAGS.train, FLAGS.test)
+  elif sys.argv[1] == "svm":
+    #SVMによる学習
+    learning.svm(FLAGS.train, FLAGS.test)
+  else:
+    learning.cnn(FLAGS.train, FLAGS.test)
 
 
 
