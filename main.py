@@ -2,13 +2,10 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-import cv2
-import random
 import export
 import learning
 import tensorflow as tf
 
-# Flagはデフォルト値やヘルプ画面の説明文を定数っぽく登録できるTensorFlow組み込み関数
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 # 学習用データ
@@ -20,13 +17,11 @@ flags.DEFINE_string('train_dir', './data', 'Directory to put the training data.'
 
 
 if __name__ == '__main__':
-  if sys.argv[1] == "cnn":
-    #Convolution Neural Networkによる学習
+  if sys.argv[1] == "cnn":    # Convolution Neural Networkによる学習を行う
     learning.cnn(FLAGS.train, FLAGS.test)
-  elif sys.argv[1] == "svm":
-    #SVMによる学習
+  elif sys.argv[1] == "svm":  # SVMによる学習を行う
     learning.svm(FLAGS.train, FLAGS.test)
-  else:
+  else:                       # オプション指定なしの場合はCNNで学習を行う
     learning.cnn(FLAGS.train, FLAGS.test)
 
 

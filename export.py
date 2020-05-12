@@ -29,7 +29,7 @@ def plot(history):
     plt.savefig(LOG_TRAINING_LOSS_GRAPH_PATH)
 
 #CNN学習の結果をhtmlファイル出力
-def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob):
+def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob, imm_layer):
     #ファイル出力
     f = open(LABEL_ANNOTATION_PATH, mode='r')
     label_annotation = []
@@ -49,15 +49,13 @@ def cnn_html(result_dict, test_image, test_label, test_path, result, result_prob
     f.write("<img src=" + os.getcwd() + LOG_TRAINING_ACCURACY_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
     f.write("<img src=" + os.getcwd() + LOG_TRAINING_LOSS_GRAPH_PATH + " alt=\"\"  height=\"400\"  />")
     f.write("<hr><h2>Immidiate Images</h2><hr>")
-    f.write("<hr><h3>1st Layer: Convolution</h3>")
-    for i in range(test_path.shape[0]):
-        f.write("<td><img src=" + os.getcwd() + "/log/cnn/conv2d/immidiate_" + str(i) + ".png" + " alt=\"\ height=\"64\"  /></td>")
-    f.write("<hr><h3>2nd Layer: Convolution</h3>")
-    for i in range(test_path.shape[0]):
-        f.write("<td><img src=" + os.getcwd() + "/log/cnn/conv2d_1/immidiate_" + str(i) + ".png" + " alt=\"\ height=\"64\"  /></td>")
-    
+    for layer_name in imm_layer:
+        f.write("<hr><h3>"+ layer_name + " Layer: Convolution</h3>")
+        for i in range(test_path.shape[0]):
+            f.write("<td><img src=" + os.getcwd() + "/log/cnn/" + layer_name + "/immidiate_" + str(i) + ".png" + " alt=\"\ height=\"64\"  /></td>")
+
     f.write("<hr><h2>Neural Network Structure</h2><hr>")
-    f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"400\"  height=\"800\"  /> <br>")
+    f.write("<img src=" + os.getcwd() + LOG_TRAINING_MODEL_PATH + " alt=\"\"  witdh=\"500\"   /> <br>")
     f.write("<hr><h2>Prediction Results</h2><hr>")
     f.write("<b>Prediction accuracy: " + str(int(result_dict['acc']*100)) + "[%]</b><br>")
 

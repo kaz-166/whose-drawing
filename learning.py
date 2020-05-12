@@ -24,42 +24,37 @@ from tensorflow.keras.models import Model
 
 #Convolutional Neural Networkによる学習
 def cnn(train_dir, test_dir):
-  # 識別ラベルの数(今回は3つ)
-  NUM_CLASSES = 4
-  # 学習する時の画像のサイズ(px)
-  IMAGE_SIZE = 128
-  # 画像の次元数(28px*28px*3(カラー))
-  IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3
-
+  # 定数定義
+  NUM_CLASSES = 4                         # 識別クラス数
+  IMAGE_SIZE = 256                        # 学習時の画像サイズ[px]
+  IMAGE_PIXELS = IMAGE_SIZE*IMAGE_SIZE*3  # 画像の次元数
   LABEL_ANNOTATION_PATH = './label_annotation.txt'
   LOG_TRAINING_ACCURACY_GRAPH_PATH = './log/cnn/training_accuracy.png'
   LOG_TRAINING_LOSS_GRAPH_PATH = './log/cnn/training_loss.png'
   LOG_TRAINING_MODEL_PATH = './log/cnn/model.png'
   TRAINING_OPTIMIZER = "SGD(確率的勾配降下法)"
-  ACTIVATION_FUNC = "relu"
- # 学習用画像をTensorFlowで読み込めるようTensor形式(行列)に変換
-  # ファイルを開く
+  ACTIVATION_FUNC = "relu"    #活性化関数
+
+  # 学習データセットのインポート
   f = open(train_dir, 'r')
-  # データを入れる配列
   train_image = []
   train_label = []
   for line in f:
-    # 改行を除いてスペース区切りにする
     line = line.rstrip()
     l = line.split()
-    # データを読み込んで28x28に縮小
     img = cv2.imread(os.getcwd() + l[0])
     img = cv2.resize(img, dsize = (IMAGE_SIZE, IMAGE_SIZE))
     train_image.append(img.astype(np.float32)/255.0)
     train_label.append(int(l[1]))
-  # numpy形式に変換
   train_image = np.asarray(train_image)
   train_label = np.asarray(train_label)
   f.close()
   
-  #Kerasの学習
+  #Kerasの学習モデルの構築
   model = Sequential()
-
+  # 畳み込み層
+  model.add(Conv2D(3, kernel_size=3, activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
+  model.add(MaxPooling2D(pool_size=(2, 2)))
   model.add(Conv2D(3, kernel_size=3, activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
   model.add(MaxPooling2D(pool_size=(2, 2)))
   model.add(Conv2D(3, kernel_size=3, activation=ACTIVATION_FUNC, input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)))
@@ -67,23 +62,19 @@ def cnn(train_dir, test_dir):
   model.add(Flatten())
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
-
+  # 全結合層
   model.add(Dense(200))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
-
   model.add(Dense(200))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
-
   model.add(Dense(200))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
-
   model.add(Dense(200))
   model.add(Activation(ACTIVATION_FUNC))
   model.add(Dropout(0.2))
-
   model.add(Dense(NUM_CLASSES))
   model.add(Activation("softmax"))
 
@@ -91,13 +82,13 @@ def cnn(train_dir, test_dir):
   opt = Adam(lr=0.001)
   # モデルをコンパイル
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
-  # 学習を実行。10%はテストに使用。
+  # 学習を実行
   Y = to_categorical(train_label, NUM_CLASSES)
   history = model.fit(train_image, Y, nb_epoch=400, batch_size=100, validation_split=0.1)
 
   export.plot(history)
 
-    # 同じく検証用画像をTensorFlowで読み込めるようTensor形式(行列)に変換
+  # テスト用データセットのインポート
   f = open(test_dir, 'r')
   test_image = []
   test_label = []
@@ -128,27 +119,17 @@ def cnn(train_dir, test_dir):
   plot_model(model, show_shapes=True, to_file=LOG_TRAINING_MODEL_PATH)
 
   #中間層の出力
-  layer_name = 'conv2d'
-  #中間層のmodelを作成
-  intermediate_layer_model = Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
-  #出力をmodel.predictで見る
-  intermediate_output = intermediate_layer_model.predict(test_image)
-  path = os.getcwd() + "/log/cnn/" + layer_name
-  if os.path.exists(path) == False:
-    os.mkdir(path)
-  for i in range(intermediate_output.shape[0]):
-    cv2.imwrite(path + '/immidiate_' + str(i) +'.png', intermediate_output[i]*255)
-
-  layer_name = 'conv2d_1'
-  #中間層のmodelを作成
-  intermediate_layer_model = Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
-  path = os.getcwd() + "/log/cnn/" + layer_name
-  if os.path.exists(path) == False:
+  imm_layer = ['conv2d', 'conv2d_1', 'conv2d_2']
+  for layer_name in imm_layer:
+    #中間層のmodelを作成
+    intermediate_layer_model = Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
+    #出力をmodel.predictで見る
+    intermediate_output = intermediate_layer_model.predict(test_image)
+    path = os.getcwd() + "/log/cnn/" + layer_name
+    if os.path.exists(path) == False: # 出力先ディレクトリが存在しなければ新規作成する
       os.mkdir(path)
-  #出力をmodel.predictで見る
-  intermediate_output = intermediate_layer_model.predict(test_image)
-  for i in range(intermediate_output.shape[0]):
-    cv2.imwrite(path + '/immidiate_' + str(i) +'.png', intermediate_output[i]*255)
+    for i in range(intermediate_output.shape[0]):
+      cv2.imwrite(path + '/immidiate_' + str(i) +'.png', intermediate_output[i]*255)
 
   #結果をhtmlファイル出力
   result_dict = {'acc':0, 'n_img':0, 'opt':"", 'act_func':""}
@@ -156,7 +137,7 @@ def cnn(train_dir, test_dir):
   result_dict['n_img'] = train_image.shape[0]
   result_dict['opt'] = TRAINING_OPTIMIZER
   result_dict['act_func'] = ACTIVATION_FUNC
-  export.cnn_html(result_dict, test_image, test_label, test_path, result, result_prob)
+  export.cnn_html(result_dict, test_image, test_label, test_path, result, result_prob, imm_layer)
 
 #SVMによる学習
 def svm(train_dir, test_dir):
