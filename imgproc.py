@@ -15,3 +15,4 @@ def get_rgb_stats(img):
     bgr = cv2.cvtColor(img, cv2.IMREAD_COLOR) # rgb票色系
     g, b, r = cv2.split(bgr)
     return [r.mean(), g.mean(), b.mean(), r.std(), g.std(), b.std()]
+

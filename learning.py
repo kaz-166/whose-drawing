@@ -22,7 +22,33 @@ from sklearn import svm as sksvm
 from sklearn.decomposition import PCA
 from tensorflow.keras.models import Model
 
-#Convolutional Neural Networkによる学習
+# 学習データ/テストデータの取得
+# [IN 1] path: 画像データセットリストの記述ファイルのパス
+# [IN 2] normalization_size_x: 入力画像のx軸方向リサイズ後のサイズ[px]
+# [IN 3] normalization_size_x: 入力画像のy軸方向リサイズ後のサイズ[px]
+# [OUT 1] image: 取得した画像の集合(NUMPY ARRAY形式)
+# [OUT 1] image: 取得した正解ラベルの集合(NUMPY ARRAY形式)
+# [OUT 1] image: 取得した画像パスの集合(NUMPY ARRAY形式)
+def import_dataset(path, normalization_size_x, normalization_size_y):
+  image = []
+  label = []
+  file_path = []
+  f = open(path, 'r')
+  for line in f:
+    line = line.rstrip()
+    l = line.split()
+    img = cv2.imread(os.getcwd() + l[0])
+    img = cv2.resize(img, dsize = (normalization_size_x, normalization_size_y))
+    image.append(img.astype(np.float32)/255.0)
+    label.append(int(l[1]))
+    file_path.append(os.getcwd() + l[0])
+  image = np.asarray(image)
+  label = np.asarray(label)
+  file_path = np.asarray(file_path)
+  f.close()
+  return image, label, file_path
+  
+# Convolutional Neural Networkによる学習
 def cnn(train_dir, test_dir):
   # 定数定義
   NUM_CLASSES = 4                         # 識別クラス数
@@ -34,21 +60,8 @@ def cnn(train_dir, test_dir):
   LOG_TRAINING_MODEL_PATH = './log/cnn/model.png'
   TRAINING_OPTIMIZER = "SGD(確率的勾配降下法)"
   ACTIVATION_FUNC = "relu"    #活性化関数
-
   # 学習データセットのインポート
-  f = open(train_dir, 'r')
-  train_image = []
-  train_label = []
-  for line in f:
-    line = line.rstrip()
-    l = line.split()
-    img = cv2.imread(os.getcwd() + l[0])
-    img = cv2.resize(img, dsize = (IMAGE_SIZE, IMAGE_SIZE))
-    train_image.append(img.astype(np.float32)/255.0)
-    train_label.append(int(l[1]))
-  train_image = np.asarray(train_image)
-  train_label = np.asarray(train_label)
-  f.close()
+  train_image, train_label, train_path = import_dataset(train_dir, IMAGE_SIZE, IMAGE_SIZE)
   
   #Kerasの学習モデルの構築
   model = Sequential()
@@ -84,27 +97,12 @@ def cnn(train_dir, test_dir):
   model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
   # 学習を実行
   Y = to_categorical(train_label, NUM_CLASSES)
-  history = model.fit(train_image, Y, nb_epoch=400, batch_size=100, validation_split=0.1)
+  history = model.fit(train_image, Y, nb_epoch=40, batch_size=100, validation_split=0.1)
 
   export.plot(history)
 
   # テスト用データセットのインポート
-  f = open(test_dir, 'r')
-  test_image = []
-  test_label = []
-  test_path = []
-  for line in f:
-    line = line.rstrip()
-    l = line.split()
-    img = cv2.imread(os.getcwd() + l[0])
-    img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-    test_image.append(img.astype(np.float32)/255.0)
-    test_label.append(int(l[1]))
-    test_path.append(os.getcwd() + l[0])
-  test_image = np.asarray(test_image)
-  test_label = np.asarray(test_label)
-  test_path = np.asarray(test_path)
-  f.close()
+  test_image, test_label, test_path = import_dataset(test_dir, IMAGE_SIZE, IMAGE_SIZE)
 
   result = model.predict_classes(test_image)
   result_prob = model.predict_proba(test_image)
